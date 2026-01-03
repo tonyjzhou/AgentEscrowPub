@@ -1,0 +1,28 @@
+# Claude Code local settings
+.claude/settings.local.json
+
+# Hardhat
+node_modules/
+cache/
+artifacts/
+typechain-types/
+
+# Environment
+.env
+.env.local
+
+# Coverage
+coverage/
+coverage.json
+
+# Build
+dist/
+
+# Deployment state (generated)
+.deployments.json
+
+# Demo state (for dashboard sync)
+.demo-state.json
+
+# Agent state
+data/

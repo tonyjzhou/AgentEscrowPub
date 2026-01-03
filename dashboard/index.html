@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentEscrow Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0b0d;
+      --bg-card: #12141a;
+      --bg-card-hover: #1a1d26;
+      --bg-elevated: #1e2128;
+      --text-primary: #f0f2f5;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border: #2d3139;
+      --border-light: #3d424d;
+
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.4);
+
+      --success: #10b981;
+      --success-light: #34d399;
+      --success-glow: rgba(16, 185, 129, 0.4);
+
+      --warning: #f59e0b;
+      --warning-light: #fbbf24;
+      --warning-glow: rgba(245, 158, 11, 0.4);
+
+      --danger: #ef4444;
+      --danger-light: #f87171;
+      --danger-glow: rgba(239, 68, 68, 0.4);
+
+      --open: #3b82f6;
+      --open-glow: rgba(59, 130, 246, 0.4);
+      --committed: #f59e0b;
+      --committed-glow: rgba(245, 158, 11, 0.4);
+      --completed: #10b981;
+      --completed-glow: rgba(16, 185, 129, 0.4);
+      --refunded: #ef4444;
+      --refunded-glow: rgba(239, 68, 68, 0.4);
+
+      --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px;
+      background-image:
+        radial-gradient(ellipse at top left, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--gradient-1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .network-select {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .network-select:hover {
+      border-color: var(--border-light);
+      background: var(--bg-card-hover);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      transition: all 0.3s ease;
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 12px var(--success-glow);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 12px var(--success-glow); }
+      50% { box-shadow: 0 0 20px var(--success-glow), 0 0 30px var(--success-glow); }
+    }
+
+    .connect-btn {
+      background: var(--gradient-1);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    .connect-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px var(--accent-glow);
+    }
+
+    .connect-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Escrow Flow Diagram */
+    .flow-diagram {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .flow-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .flow-steps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .flow-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .flow-step-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .flow-step-icon.open {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+      border: 2px solid var(--open);
+      color: var(--open);
+    }
+
+    .flow-step-icon.committed {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+      border: 2px solid var(--committed);
+      color: var(--committed);
+    }
+
+    .flow-step-icon.completed {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+      border: 2px solid var(--completed);
+      color: var(--completed);
+    }
+
+    .flow-step-icon.refunded {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      border: 2px solid var(--refunded);
+      color: var(--refunded);
+    }
+
+    .flow-step-icon.active {
+      animation: flow-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes flow-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .flow-step-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .flow-step-count {
+      font-size: 20px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .flow-step-count.open { color: var(--open); }
+    .flow-step-count.committed { color: var(--committed); }
+    .flow-step-count.completed { color: var(--completed); }
+    .flow-step-count.refunded { color: var(--refunded); }
+
+    .flow-arrow {
+      flex: 0.5;
+      height: 2px;
+      background: linear-gradient(90deg, var(--border) 0%, var(--border-light) 50%, var(--border) 100%);
+      position: relative;
+    }
+
+    .flow-arrow::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: -4px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid var(--border-light);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+
+    /* Scenario Banner */
+    .scenario-banner {
+      background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scenario-banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--gradient-1);
+    }
+
+    .scenario-banner.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scenario-banner.running {
+      border-color: var(--success);
+      box-shadow: 0 0 30px var(--success-glow);
+    }
+
+    .scenario-banner.running::before {
+      background: var(--success);
+      animation: shimmer 2s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+
+    .scenario-banner.paused {
+      border-color: var(--warning);
+      box-shadow: 0 0 30px var(--warning-glow);
+    }
+
+    .scenario-banner.paused::before {
+      background: var(--warning);
+    }
+
+    .scenario-banner.completed {
+      border-color: var(--accent);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .scenario-banner.completed::before {
+      background: var(--gradient-1);
+    }
+
+    .scenario-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .scenario-name {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .scenario-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .scenario-status.running {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .scenario-status.paused {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .scenario-status.completed {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-light);
+    }
+
+    .scenario-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .scenario-status.running .scenario-status-dot {
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .scenario-step {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent-light);
+      margin-bottom: 4px;
+    }
+
+    .scenario-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Wallet Cards */
+    .wallets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .wallet-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wallet-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .wallet-card.requester::before { background: var(--gradient-1); }
+    .wallet-card.worker::before { background: var(--gradient-4); }
+    .wallet-card.attacker::before { background: var(--gradient-2); }
+
+    .wallet-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-light);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .wallet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .wallet-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .wallet-card.requester .wallet-icon {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+    }
+
+    .wallet-card.worker .wallet-icon {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+    }
+
+    .wallet-card.attacker .wallet-icon {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+    }
+
+    .wallet-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .wallet-role {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .wallet-balance {
+      margin-bottom: 12px;
+    }
+
+    .balance-amount {
+      font-size: 32px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .balance-token {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+
+    .wallet-address {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-dark);
+      padding: 8px 12px;
+      border-radius: 8px;
+      word-break: break-all;
+    }
+
+    /* Tasks Table */
+    .tasks-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .refresh-btn {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .refresh-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-light);
+      color: var(--text-primary);
+    }
+
+    .refresh-icon {
+      transition: transform 0.3s ease;
+    }
+
+    .refresh-btn:hover .refresh-icon {
+      transform: rotate(180deg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s ease;
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .state-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .state-badge.open {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--open);
+    }
+
+    .state-badge.committed {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--committed);
+    }
+
+    .state-badge.committed::before {
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    .state-badge.completed {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--completed);
+    }
+
+    .state-badge.refunded {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--refunded);
+    }
+
+    .address-cell {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .amount-cell {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-text {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .empty-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Event Log */
+    .logs-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      max-height: 320px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logs-container {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .logs-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .logs-container::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+      border-radius: 3px;
+    }
+
+    .logs-container::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .log-entry {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: var(--bg-dark);
+      display: flex;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .log-message {
+      color: var(--text-secondary);
+    }
+
+    .log-entry.success .log-message { color: var(--success); }
+    .log-entry.error .log-message { color: var(--danger); }
+    .log-entry.event .log-message { color: var(--accent-light); }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .wallets-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .wallets-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-steps {
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .flow-arrow {
+        display: none;
+      }
+
+      .flow-step {
+        flex: 0 0 calc(50% - 8px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🔐</div>
+        <div>
+          <h1>AgentEscrow</h1>
+          <div class="header-subtitle">Trustless Settlement for Autonomous Agents</div>
+        </div>
+      </div>
+      <div class="connection-status">
+        <select id="network-select" class="network-select">
+          <option value="localhost">Localhost (31337)</option>
+          <option value="sepolia">Sepolia Testnet</option>
+        </select>
+        <div class="status-indicator">
+          <div id="status-dot" class="status-dot"></div>
+          <span id="connection-text">Disconnected</span>
+        </div>
+        <button id="connect-btn" class="connect-btn">Connect</button>
+      </div>
+    </header>
+
+    <!-- Scenario Banner for Demo Sync -->
+    <div id="scenario-banner" class="scenario-banner">
+      <div class="scenario-header">
+        <div class="scenario-name" id="scenario-name">Loading...</div>
+        <div class="scenario-status" id="scenario-status">
+          <div class="scenario-status-dot"></div>
+          <span id="scenario-status-text">Running</span>
+        </div>
+      </div>
+      <div class="scenario-step" id="scenario-step">Step</div>
+      <div class="scenario-description" id="scenario-description">Description</div>
+    </div>
+
+    <!-- Escrow Flow Diagram -->
+    <div class="flow-diagram">
+      <div class="flow-title">Escrow Flow</div>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-step-icon open" id="flow-open">📋</div>
+          <div class="flow-step-count open" id="stat-open">0</div>
+          <div class="flow-step-label">Open</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step">
+          <div class="flow-step-icon committed" id="flow-committed">🔒</div>
+          <div class="flow-step-count committed" id="stat-committed">0</div>
+          <div class="flow-step-label">Committed</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step">
+          <div class="flow-step-icon completed" id="flow-completed">✅</div>
+          <div class="flow-step-count completed" id="stat-completed">0</div>
+          <div class="flow-step-label">Completed</div>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step">
+          <div class="flow-step-icon refunded" id="flow-refunded">↩️</div>
+          <div class="flow-step-count refunded" id="stat-refunded">0</div>
+          <div class="flow-step-label">Refunded</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wallet Cards -->
+    <div class="wallets-grid" id="wallets-grid">
+      <div class="wallet-card requester">
+        <div class="wallet-header">
+          <div>
+            <div class="wallet-name">Agent A</div>
+            <div class="wallet-role">Requester</div>
+          </div>
+          <div class="wallet-icon">🅰️</div>
+        </div>
+        <div class="wallet-balance">
+          <span class="balance-amount" id="balance-requester">--</span>
+          <span class="balance-token">MNEE</span>
+        </div>
+        <div class="wallet-address" id="address-requester">Connect to view address</div>
+      </div>
+      <div class="wallet-card worker">
+        <div class="wallet-header">
+          <div>
+            <div class="wallet-name">Agent B</div>
+            <div class="wallet-role">Worker</div>
+          </div>
+          <div class="wallet-icon">🅱️</div>
+        </div>
+        <div class="wallet-balance">
+          <span class="balance-amount" id="balance-worker">--</span>
+          <span class="balance-token">MNEE</span>
+        </div>
+        <div class="wallet-address" id="address-worker">Connect to view address</div>
+      </div>
+      <div class="wallet-card attacker">
+        <div class="wallet-header">
+          <div>
+            <div class="wallet-name">Attacker</div>
+            <div class="wallet-role">Malicious Actor</div>
+          </div>
+          <div class="wallet-icon">👹</div>
+        </div>
+        <div class="wallet-balance">
+          <span class="balance-amount" id="balance-attacker">--</span>
+          <span class="balance-token">MNEE</span>
+        </div>
+        <div class="wallet-address" id="address-attacker">Connect to view address</div>
+      </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="tasks-card">
+      <div class="section-header">
+        <h2 class="section-title">Tasks</h2>
+        <button id="refresh-btn" class="refresh-btn">
+          <span class="refresh-icon">↻</span> Refresh
+        </button>
+      </div>
+      <table id="tasks-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>State</th>
+            <th>Requester</th>
+            <th>Worker</th>
+            <th>Amount</th>
+            <th>Bond</th>
+            <th>Deadline</th>
+          </tr>
+        </thead>
+        <tbody id="tasks-body">
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <div class="empty-text">No tasks yet</div>
+                <div class="empty-hint">Connect to a network and create tasks to see them here</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Event Log -->
+    <div class="logs-card">
+      <div class="section-header">
+        <h3 class="section-title">Event Log</h3>
+      </div>
+      <div class="logs-container" id="logs-container">
+        <div class="log-entry">
+          <span class="log-time">--:--:--</span>
+          <span class="log-message">Waiting for connection...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Contract ABIs (minimal for dashboard)
+    const ESCROW_ABI = [
+      "function nextTaskId() view returns (uint256)",
+      "function getTask(uint256 taskId) view returns (tuple(address requester, bytes32 inputHash, bytes32 expectedOutputHash, bytes32 specHash, uint256 amount, uint256 bondAmount, uint256 deadline, uint8 state, address committedWorker, bytes32 commitHash, uint256 revealDeadline))",
+      "function mnee() view returns (address)",
+      "event TaskCreated(uint256 indexed taskId, address indexed requester, bytes inputBytes, bytes32 inputHash, bytes32 expectedOutputHash, bytes32 specHash, uint256 amount, uint256 bondAmount, uint256 deadline)",
+      "event TaskCommitted(uint256 indexed taskId, address indexed worker, bytes32 commitHash, uint256 bondAmount, uint256 revealDeadline)",
+      "event TaskCompleted(uint256 indexed taskId, address indexed worker, bytes outputBytes)",
+      "event TaskRefunded(uint256 indexed taskId, address indexed requester, uint256 amount, uint256 slashedBond)",
+      "event CommitExpired(uint256 indexed taskId, address indexed expiredWorker, uint256 slashedBond)"
+    ];
+
+    const ERC20_ABI = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function symbol() view returns (string)"
+    ];
+
+    // State
+    let provider = null;
+    let escrowContract = null;
+    let mneeContract = null;
+    let tasks = new Map();
+    let isConnected = false;
+    let demoStateInterval = null;
+    let lastDemoState = null;
+
+    // Demo wallet addresses
+    const DEMO_WALLETS = {
+      requester: { name: "Agent A (Requester)", address: null },
+      worker: { name: "Agent B (Worker)", address: null },
+      attacker: { name: "Attacker", address: null }
+    };
+
+    // Network configurations
+    const NETWORKS = {
+      localhost: {
+        rpcUrl: "http://127.0.0.1:8545",
+        escrowAddress: null
+      },
+      sepolia: {
+        rpcUrl: "",
+        escrowAddress: null
+      }
+    };
+
+    const STATE_LABELS = ["OPEN", "COMMITTED", "COMPLETED", "REFUNDED"];
+    const STATE_CLASSES = ["open", "committed", "completed", "refunded"];
+
+    // Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("connect-btn").addEventListener("click", connect);
+      document.getElementById("refresh-btn").addEventListener("click", refresh);
+      document.getElementById("network-select").addEventListener("change", () => {
+        if (isConnected) connect();
+      });
+    });
+
+    async function connect() {
+      const network = document.getElementById("network-select").value;
+      const config = NETWORKS[network];
+
+      try {
+        log("Connecting to " + network + "...", "info");
+
+        const rpcUrl = config.rpcUrl || (network === "localhost" ? "http://127.0.0.1:8545" : "");
+        if (!rpcUrl) {
+          log("RPC URL not configured for " + network, "error");
+          updateConnectionStatus(false);
+          isConnected = false;
+          return;
+        }
+
+        provider = new ethers.JsonRpcProvider(rpcUrl);
+
+        // Try to load deployment addresses
+        try {
+          const response = await fetch("/.deployments.json");
+          if (response.ok) {
+            const deployments = await response.json();
+            if (deployments[network]) {
+              config.escrowAddress = deployments[network].escrow;
+            }
+          }
+        } catch (e) {
+          log("Using default deployment addresses", "info");
+        }
+
+        if (!config.escrowAddress) {
+          config.escrowAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+        }
+
+        if (escrowContract) {
+          escrowContract.removeAllListeners();
+        }
+        escrowContract = new ethers.Contract(config.escrowAddress, ESCROW_ABI, provider);
+
+        const mneeAddress = await escrowContract.mnee();
+        mneeContract = new ethers.Contract(mneeAddress, ERC20_ABI, provider);
+
+        // Get demo wallet addresses - FIX: accounts are Signer objects, get address properly
+        const accounts = await provider.listAccounts();
+        if (accounts.length >= 4) {
+          DEMO_WALLETS.requester.address = accounts[1].address || accounts[1];
+          DEMO_WALLETS.worker.address = accounts[2].address || accounts[2];
+          DEMO_WALLETS.attacker.address = accounts[3].address || accounts[3];
+        }
+
+        isConnected = true;
+        updateConnectionStatus(true);
+        log("Connected to " + network, "success");
+
+        subscribeToEvents();
+        startDemoStatePolling();
+        await refresh();
+
+      } catch (error) {
+        console.error(error);
+        log("Connection failed: " + error.message, "error");
+        updateConnectionStatus(false);
+        isConnected = false;
+      }
+    }
+
+    function updateConnectionStatus(connected) {
+      const dot = document.getElementById("status-dot");
+      const text = document.getElementById("connection-text");
+
+      if (connected) {
+        dot.classList.add("connected");
+        text.textContent = "Connected";
+      } else {
+        dot.classList.remove("connected");
+        text.textContent = "Disconnected";
+      }
+    }
+
+    async function refresh() {
+      if (!isConnected) return;
+
+      try {
+        const nextTaskId = await escrowContract.nextTaskId();
+        tasks.clear();
+
+        for (let i = 0; i < Number(nextTaskId); i++) {
+          const task = await escrowContract.getTask(i);
+          tasks.set(i, {
+            id: i,
+            requester: task.requester,
+            inputHash: task.inputHash,
+            expectedOutputHash: task.expectedOutputHash,
+            specHash: task.specHash,
+            amount: task.amount,
+            bondAmount: task.bondAmount,
+            deadline: task.deadline,
+            state: Number(task.state),
+            committedWorker: task.committedWorker,
+            commitHash: task.commitHash,
+            revealDeadline: task.revealDeadline
+          });
+        }
+
+        updateTasksTable();
+        updateStats();
+        await updateWallets();
+
+      } catch (error) {
+        console.error(error);
+        log("Refresh failed: " + error.message, "error");
+      }
+    }
+
+    function subscribeToEvents() {
+      escrowContract.on("TaskCreated", (taskId, requester) => {
+        log(`TaskCreated: Task #${taskId} by ${shortAddress(requester)}`, "event");
+        refresh();
+      });
+
+      escrowContract.on("TaskCommitted", (taskId, worker) => {
+        log(`TaskCommitted: Task #${taskId} by ${shortAddress(worker)}`, "event");
+        refresh();
+      });
+
+      escrowContract.on("TaskCompleted", (taskId, worker) => {
+        log(`TaskCompleted: Task #${taskId} by ${shortAddress(worker)}`, "success");
+        refresh();
+      });
+
+      escrowContract.on("TaskRefunded", (taskId, requester) => {
+        log(`TaskRefunded: Task #${taskId} to ${shortAddress(requester)}`, "event");
+        refresh();
+      });
+
+      escrowContract.on("CommitExpired", (taskId, expiredWorker, slashedBond) => {
+        log(`CommitExpired: Task #${taskId}, bond slashed`, "error");
+        refresh();
+      });
+    }
+
+    function updateTasksTable() {
+      const tbody = document.getElementById("tasks-body");
+
+      if (tasks.size === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <div class="empty-text">No tasks yet</div>
+                <div class="empty-hint">Run npm run demo to create tasks</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const rows = [];
+      tasks.forEach((task, id) => {
+        const stateClass = STATE_CLASSES[task.state];
+        const stateLabel = STATE_LABELS[task.state];
+        const deadline = new Date(Number(task.deadline) * 1000);
+        const workerAddr = task.committedWorker === ethers.ZeroAddress ? "—" : shortAddress(task.committedWorker);
+
+        rows.push(`
+          <tr>
+            <td><strong>#${id}</strong></td>
+            <td><span class="state-badge ${stateClass}">${stateLabel}</span></td>
+            <td class="address-cell">${shortAddress(task.requester)}</td>
+            <td class="address-cell">${workerAddr}</td>
+            <td class="amount-cell">${formatAmount(task.amount)} MNEE</td>
+            <td class="amount-cell">${formatAmount(task.bondAmount)} MNEE</td>
+            <td>${deadline.toLocaleTimeString()}</td>
+          </tr>
+        `);
+      });
+
+      tbody.innerHTML = rows.join("");
+    }
+
+    function updateStats() {
+      let open = 0, committed = 0, completed = 0, refunded = 0;
+
+      tasks.forEach(task => {
+        switch (task.state) {
+          case 0: open++; break;
+          case 1: committed++; break;
+          case 2: completed++; break;
+          case 3: refunded++; break;
+        }
+      });
+
+      document.getElementById("stat-open").textContent = open;
+      document.getElementById("stat-committed").textContent = committed;
+      document.getElementById("stat-completed").textContent = completed;
+      document.getElementById("stat-refunded").textContent = refunded;
+
+      // Animate active flow steps
+      document.getElementById("flow-open").classList.toggle("active", open > 0);
+      document.getElementById("flow-committed").classList.toggle("active", committed > 0);
+    }
+
+    async function updateWallets() {
+      for (const [key, wallet] of Object.entries(DEMO_WALLETS)) {
+        if (!wallet.address) continue;
+
+        try {
+          const addr = typeof wallet.address === 'string' ? wallet.address : wallet.address.address;
+          const balance = await mneeContract.balanceOf(addr);
+
+          document.getElementById(`balance-${key}`).textContent = formatAmount(balance);
+          document.getElementById(`address-${key}`).textContent = addr;
+        } catch (e) {
+          console.error(`Failed to get balance for ${key}:`, e);
+        }
+      }
+    }
+
+    function shortAddress(address) {
+      if (!address || address === ethers.ZeroAddress) return "—";
+      const addr = typeof address === 'string' ? address : address.address;
+      return addr.slice(0, 6) + "..." + addr.slice(-4);
+    }
+
+    function formatAmount(amount) {
+      const formatted = ethers.formatUnits(amount, 18);
+      const num = parseFloat(formatted);
+      if (num === Math.floor(num)) return num.toString();
+      return num.toFixed(2);
+    }
+
+    function log(message, type = "info") {
+      const container = document.getElementById("logs-container");
+      const time = new Date().toLocaleTimeString();
+
+      const entry = document.createElement("div");
+      entry.className = `log-entry ${type}`;
+      entry.innerHTML = `<span class="log-time">${time}</span><span class="log-message">${message}</span>`;
+
+      container.insertBefore(entry, container.firstChild);
+
+      while (container.children.length > 50) {
+        container.removeChild(container.lastChild);
+      }
+    }
+
+    // Demo State Polling
+    async function pollDemoState() {
+      try {
+        const response = await fetch("/.demo-state.json?" + Date.now());
+        if (response.ok) {
+          const state = await response.json();
+          updateScenarioBanner(state);
+        } else {
+          hideScenarioBanner();
+        }
+      } catch (e) {
+        hideScenarioBanner();
+      }
+    }
+
+    function updateScenarioBanner(state) {
+      const banner = document.getElementById("scenario-banner");
+      const nameEl = document.getElementById("scenario-name");
+      const stepEl = document.getElementById("scenario-step");
+      const descEl = document.getElementById("scenario-description");
+      const statusEl = document.getElementById("scenario-status");
+      const statusTextEl = document.getElementById("scenario-status-text");
+
+      const stateStr = JSON.stringify(state);
+      if (stateStr === lastDemoState) return;
+      lastDemoState = stateStr;
+
+      nameEl.textContent = state.scenario;
+      stepEl.textContent = state.step;
+      descEl.textContent = state.description;
+      statusTextEl.textContent = state.status.charAt(0).toUpperCase() + state.status.slice(1);
+
+      banner.classList.remove("running", "paused", "completed");
+      statusEl.classList.remove("running", "paused", "completed");
+      banner.classList.add(state.status);
+      statusEl.classList.add(state.status);
+      banner.classList.add("active");
+
+      log(`Demo: ${state.scenario} - ${state.step}`, "info");
+    }
+
+    function hideScenarioBanner() {
+      document.getElementById("scenario-banner").classList.remove("active");
+      lastDemoState = null;
+    }
+
+    function startDemoStatePolling() {
+      if (demoStateInterval) clearInterval(demoStateInterval);
+      demoStateInterval = setInterval(pollDemoState, 500);
+      pollDemoState();
+    }
+  </script>
+</body>
+</html>
