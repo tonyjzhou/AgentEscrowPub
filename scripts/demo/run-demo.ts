@@ -110,6 +110,8 @@ async function main() {
   log(`  Requester: ${ethers.formatUnits(await mnee.balanceOf(requester.address), 18)} MNEE`, "blue");
   log(`  Worker: ${ethers.formatUnits(await mnee.balanceOf(worker.address), 18)} MNEE`, "blue");
 
+  await waitForEnter("Press Enter for Step 1: Requester Creates Task...");
+
   // Step 1: Create task
   writeState("Demo 1: Happy Path", "Step 1: Create Task", "Requester creates task with payment and expected output hash", "running");
   subHeader("Step 1: Requester Creates Task");
@@ -140,6 +142,8 @@ async function main() {
   log(`  Task ID: 0`, "green");
   log(`  Tx: ${createTx.hash}`, "cyan");
 
+  await waitForEnter("Press Enter for Step 2: Worker Commits...");
+
   // Step 2: Worker commits
   writeState("Demo 1: Happy Path", "Step 2: Worker Commits", "Worker evaluates task profitability and commits with bond", "running");
   subHeader("Step 2: Worker Evaluates and Commits");
@@ -166,6 +170,8 @@ async function main() {
   log(`  Bond locked: ${ethers.formatUnits(bondAmount, 18)} MNEE`, "yellow");
   log(`  Tx: ${commitTx.hash}`, "cyan");
 
+  await waitForEnter("Press Enter for Step 3: Worker Reveals...");
+
   // Step 3: Worker reveals
   writeState("Demo 1: Happy Path", "Step 3: Worker Reveals", "Worker submits output proof - payment transfers on success", "running");
   subHeader("Step 3: Worker Reveals Output");
@@ -178,6 +184,8 @@ async function main() {
   log(`  ✓ Commit hash verified`, "green");
   log(`  ✓ Payment + bond transferred to worker`, "green");
   log(`  Tx: ${revealTx.hash}`, "cyan");
+
+  await waitForEnter("Press Enter to view Final Balances...");
 
   // Final balances
   subHeader("Final Balances");
@@ -237,6 +245,8 @@ async function main() {
     }
   }
 
+  await waitForEnter("Press Enter to see legitimate worker reveal...");
+
   // Worker successfully reveals
   await escrow.connect(worker).reveal(1, outputBytes, salt2);
   log(`  Worker's legitimate reveal succeeded`, "green");
@@ -267,11 +277,15 @@ async function main() {
   await escrow.connect(attacker).commit(2, fakeCommitHash);
   log(`  Attacker committed (bond locked: ${ethers.formatUnits(bondAmount, 18)} MNEE)`, "yellow");
 
+  await waitForEnter("Press Enter to fast-forward time (reveal window expires)...");
+
   // Fast-forward time (simulate reveal window expiry)
   writeState("Attack 2: Commit Griefing", "Time Skip", "Reveal window expires - attacker cannot reveal", "running");
   log(`  [Time passes... reveal window expires]`, "magenta");
   await ethers.provider.send("evm_increaseTime", [REVEAL_WINDOW + 1]);
   await ethers.provider.send("evm_mine", []);
+
+  await waitForEnter("Press Enter to expire commit and slash bond...");
 
   // Anyone can expire the commit
   await escrow.expireCommit(2);
