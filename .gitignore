@@ -1,6 +1,9 @@
 # Claude Code local settings
 .claude/settings.local.json
 
+# Private notes/research
+thoughts/
+
 # Hardhat
 node_modules/
 cache/
