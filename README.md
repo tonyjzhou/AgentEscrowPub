@@ -34,6 +34,9 @@ npm run setup-demo
 
 # Run the demo
 npm run demo
+
+# Open the dashboard to monitor tasks and balances
+open dashboard/index.html
 ```
 
 ## Project Structure
